@@ -6,14 +6,27 @@ import sqlite3
 
 from asyncio import StreamReader, StreamWriter
 from base64 import b64decode
+from typing import Awaitable, Callable
 from secrets import randbits
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
-import server.database_functions
-import server.exceptions
-import server.handling
+import exceptions
+
+from database import create_tables, get_user_id
+from handlers import messages
+from json_types import JSONDict
+
+type _HandlerCallable = Callable[
+    [int, JSONDict, aiosqlite.Connection],
+    Awaitable[JSONDict],
+]
+
+_DATA_HANDLERS: dict[str, _HandlerCallable] = {
+    'GET_MESSAGES': messages.get_messages,
+    'SEND_MESSAGE': messages.send_message,
+}
 
 _REQUIRED_PARAMETERS: list[tuple[str, type]] = [
     ('data', dict),
@@ -21,17 +34,12 @@ _REQUIRED_PARAMETERS: list[tuple[str, type]] = [
     ('public_key', str),
 ]
 
-class MalformedRequestError(Exception):
-    pass
-
-class RequestTooLargeError(Exception):
-    pass
-
-_MalformationExceptions = (
+_MALFORMATION_EXCEPTIONS = (
     binascii.Error,
+    exceptions.MalformedDataError,
+    exceptions.MalformedRequestError,
+    KeyError,
     json.JSONDecodeError,
-    MalformedRequestError,
-    server.exceptions.MalformedDataError,
 )
 
 class Server:
@@ -50,14 +58,14 @@ class Server:
 
         # Ensure that the database is set up.
         with sqlite3.connect(db_name) as conn:
-            server.database_functions.create_tables(conn)
+            create_tables(conn)
         
         # Prepare a variable to hold an asynchronous connection.
-        self.db_connection = None
+        self.conn = None
 
     async def main(self):
         """Start listening for requests on the context's host and port."""
-        self.db_connection = await aiosqlite.connect(self.db_name)
+        self.conn = await aiosqlite.connect(self.db_name)
         server = await asyncio.start_server(self.listen, self.host, self.port)
         try:
             async with server:
@@ -65,8 +73,8 @@ class Server:
         except asyncio.CancelledError:
             pass
         finally:
-            await self.db_connection.commit()
-            await self.db_connection.close()
+            await self.conn.commit()
+            await self.conn.close()
 
 
     async def listen(self, reader: StreamReader, writer: StreamWriter):
@@ -82,36 +90,35 @@ class Server:
             else:
                 raw_request = await reader.read(self.max_request_bytes + 1)
                 if len(raw_request) > self.max_request_bytes:
-                    raise RequestTooLargeError()
+                    raise exceptions.RequestTooLargeError()
             
             # Extract a dictionary from the raw request.
             request = json.loads(raw_request)
 
             # Validate the overall structure of the request.
             if not isinstance(request, dict):
-                raise MalformedRequestError()
+                raise exceptions.MalformedRequestError()
             for name, type in _REQUIRED_PARAMETERS:
-                if name not in request:
-                    raise MalformedRequestError()
-                elif not isinstance(request[name], type):
-                    raise MalformedRequestError()
+                if not isinstance(request[name], type):
+                    raise exceptions.MalformedRequestError()
                 
             # Verify the signature provided.
             data = request['data']
             signature = b64decode(request['signature'])
             key_bytes = b64decode(request['public_key'])
             if len(key_bytes) != 32:
-                raise MalformedRequestError()
+                raise exceptions.MalformedRequestError()
             public_key = Ed25519PublicKey.from_public_bytes(key_bytes)
             public_key.verify(signature, json.dumps(data).encode())                
 
-            # Pass the request data to the handling logic.
-            response = await server.handling.handle_data(
-                conn=self.db_connection,
-                data=data,
-                public_key=request['public_key'],
-            )
-        except _MalformationExceptions:
+            # Attempt to handle the request.
+            user_id = await get_user_id(self.conn, request['public_key'])
+            if data['command'] not in _DATA_HANDLERS:
+                raise exceptions.UnrecognisedCommandError(data['command'])
+            handler = _DATA_HANDLERS[data['command']]
+            response = await handler(user_id, data, self.conn)
+
+        except _MALFORMATION_EXCEPTIONS:
             response = {
                 'status': '400',
                 'message': 'Malformed request.',
@@ -121,12 +128,12 @@ class Server:
                 'status': '401',
                 'message': 'Invalid signature.',
             }
-        except server.handling.UnrecognisedCommandError:
+        except exceptions.UnrecognisedCommandError as e:
             response = {
                 'status': '404',
-                'message': 'Unrecognised command.',
+                'message': f'{e} is not a recognised command.',
             }
-        except RequestTooLargeError:
+        except exceptions.RequestTooLargeError:
             response = {
                 'status': '413',
                 'message': 'Request too large.',
@@ -136,9 +143,6 @@ class Server:
                 'status': '500',
                 'message': str(e),
             }
-
-        # Attach a 32-byte nonce to the response.
-        #response['nonce'] = randbits(256)
 
         # Send the response to the client.
         writer.write(json.dumps(response).encode())
@@ -150,5 +154,5 @@ class Server:
 
 
 if __name__ == '__main__':
-    server = Server('server/server_database.db')
+    server = Server('database.db')
     asyncio.run(server.main())

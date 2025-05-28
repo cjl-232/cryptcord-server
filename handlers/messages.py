@@ -3,9 +3,9 @@ from datetime import datetime
 
 from aiosqlite import Connection
 
+from database import get_user_id
+from exceptions import MalformedDataError
 from json_types import JSONDict
-from server.exceptions import MalformedDataError
-from server.handler_functions.utilities import get_user_id
 
 # At some point I'll want better documentation of the commands. At that point, it'll
 # probably be helpful to somehow have their required arguments stored in one place...
@@ -43,7 +43,7 @@ _SEND_MESSAGE_QUERY = ' '.join([
     'VALUES(?, ?, ?, ?, ?)',
 ])
 
-async def get_messages(conn: Connection, user_id: int, data: JSONDict):
+async def get_messages(user_id: int, data: JSONDict, conn: Connection):
     """Retrieve the user's messages from the connection."""
     parameters = (user_id, data.get('min_datetime', datetime.min))
     await conn.set_trace_callback(print)
@@ -54,7 +54,7 @@ async def get_messages(conn: Connection, user_id: int, data: JSONDict):
         'data': messages,
     }
 
-async def send_message(conn: Connection, user_id: int, data: JSONDict):
+async def send_message(user_id: int, data: JSONDict, conn: Connection):
     try:
         recipient_id = await get_user_id(conn, data['recipient_public_key'])
         encrypted_message = data['encrypted_message']
@@ -68,7 +68,6 @@ async def send_message(conn: Connection, user_id: int, data: JSONDict):
             timestamp,
         )
         await conn.execute(_SEND_MESSAGE_QUERY, parameters)
-        return {'status': 201, 'message': 'Message sent.'}
-        
     except KeyError:
         raise MalformedDataError()
+    return {'status': 201, 'message': 'Message sent.'}
