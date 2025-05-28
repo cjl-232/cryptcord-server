@@ -1,4 +1,3 @@
-from base64 import b64encode
 from datetime import datetime
 
 from aiosqlite import Connection
@@ -43,7 +42,11 @@ _SEND_MESSAGE_QUERY = ' '.join([
     'VALUES(?, ?, ?, ?, ?)',
 ])
 
-async def get_messages(user_id: int, data: JSONDict, conn: Connection):
+async def get_messages(
+        user_id: int,
+        data: JSONDict,
+        conn: Connection,
+    ) -> JSONDict:
     """Retrieve the user's messages from the connection."""
     parameters = (user_id, data.get('min_datetime', datetime.min))
     await conn.set_trace_callback(print)
@@ -54,7 +57,11 @@ async def get_messages(user_id: int, data: JSONDict, conn: Connection):
         'data': messages,
     }
 
-async def send_message(user_id: int, data: JSONDict, conn: Connection):
+async def send_message(
+        user_id: int,
+        data: JSONDict,
+        conn: Connection,
+    ) -> JSONDict:
     try:
         recipient_id = await get_user_id(conn, data['recipient_public_key'])
         encrypted_message = data['encrypted_message']
