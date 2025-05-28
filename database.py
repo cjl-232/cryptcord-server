@@ -6,6 +6,9 @@ import aiosqlite
 
 from exceptions import MalformedRequestError
 
+_USER_RETRIEVAL_QUERY = 'SELECT id FROM users WHERE public_key = ?'
+_USER_INSERTION_QUERY = 'INSERT INTO users(public_key) VALUES(?) RETURNING id'
+
 def create_tables(conn: sqlite3.Connection):
     conn.execute(' '.join([
         'CREATE TABLE IF NOT EXISTS users(',
@@ -38,10 +41,19 @@ def create_tables(conn: sqlite3.Connection):
         '  timestamp',
         ')',
     ]))
+    conn.execute(' '.join([
+        'CREATE TABLE IF NOT EXISTS exchange_keys(',
+        '  id INTEGER PRIMARY KEY,',
+        '  sender_id INTEGER NOT NULL,',
+        '  recipient_id INTEGER NOT NULL,',
+        '  public_exchange_key CHAR(44) NOT NULL,',
+        '  signature CHAR(88) NOT NULL,',
+        '  FOREIGN KEY(sender_id) REFERENCES users(id),',
+        '  FOREIGN KEY(recipient_id) REFERENCES users(id),'
+        '  UNIQUE(sender_id, recipient_id) ON CONFLICT REPLACE',
+        ')',
+    ]))
     conn.commit()
-
-_USER_RETRIEVAL_QUERY = 'SELECT id FROM users WHERE public_key = ?'
-_USER_INSERTION_QUERY = 'INSERT INTO users(public_key) VALUES(?) RETURNING id'
 
 async def get_user_id(conn: aiosqlite.Connection, public_key: str) -> int:
     """
