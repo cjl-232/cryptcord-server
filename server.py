@@ -1,4 +1,3 @@
-import aiosqlite
 import asyncio
 import binascii
 import json
@@ -8,6 +7,8 @@ from asyncio import StreamReader, StreamWriter
 from base64 import b64decode
 from typing import Awaitable, Callable
 from secrets import randbits
+
+import aiosqlite
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
