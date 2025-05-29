@@ -1,6 +1,6 @@
-from aiosqlite import Connection
+from sqlalchemy.ext.asyncio import AsyncConnection
 
-from database import get_user_id
+from _database import get_user_id
 from exceptions import MalformedDataError
 from json_types import JSONDict
 
@@ -10,7 +10,7 @@ _POST_KEY_QUERY = ' '.join([
     '    sender_id,',
     '    recipient_id,',
     '    public_exchange_key,',
-    '    signature,',
+    '    signature',
     '  )',
     'VALUES(?, ?, ?, ?)',
 ])
@@ -27,13 +27,13 @@ _RETRIEVE_KEYS_QUERY = ' '.join([
     'ON',
     '  e.sender_id = u.id',
     'WHERE',
-    '  m.recipient_id = ?',
+    '  e.recipient_id = ?',
 ])
 
 async def post_key(
         user_id: int,
         data: JSONDict,
-        conn: Connection,
+        conn: AsyncConnection,
     ) -> JSONDict:
     """Post an exchange key for another user to collect."""
     try:
@@ -55,7 +55,7 @@ async def post_key(
 async def retrieve_keys(
         user_id: int,
         _: JSONDict,
-        conn: Connection,
+        conn: AsyncConnection,
     ) -> JSONDict:
     """Retrieve all keys posted to the request's author."""
     parameters = (user_id,)
