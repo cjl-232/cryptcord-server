@@ -3,15 +3,16 @@
 import binascii
 import os
 
-from base64 import b64decode, b64encode, urlsafe_b64decode, urlsafe_b64encode
+from base64 import urlsafe_b64decode, urlsafe_b64encode
 from contextlib import asynccontextmanager
 from datetime import datetime
+from secrets import token_bytes
 from typing import Annotated, Any
 
 from cryptography.fernet import Fernet
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException, Query
-from pydantic import AfterValidator, BaseModel, Field, ValidationError
+from fastapi import FastAPI
+from pydantic import AfterValidator, BaseModel, Field
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from database import operations
@@ -42,8 +43,8 @@ URL = (
 )
 engine = create_async_engine(URL)
 
-# Define the base model for all request bodies.
-class BaseRequestModel(BaseModel):
+# Define the base models used to create endpoint-specific body models.
+class PublicKeyModel(BaseModel):
     public_key: Annotated[
         str,
         Field(
@@ -52,12 +53,28 @@ class BaseRequestModel(BaseModel):
                 'correspond to a Ed25519 public key owned by the sender of '
                 'the request.'
             ),
-            examples=[urlsafe_b64encode(b'abcd' * 8)],
+            examples=[urlsafe_b64encode(token_bytes(32))],
             max_length=44,
             min_length=44,
         ),
         AfterValidator(is_base64),
     ]
+class RecipientPublicKeyModel(BaseModel):
+    recipient_public_key: Annotated[
+        str,
+        Field(
+            description=(
+                'A Base64 representation of a 32-byte value. This should '
+                'correspond to a Ed25519 public key owned by the desired '
+                'recipient.'
+            ),
+            examples=[urlsafe_b64encode(token_bytes(32))],
+            max_length=44,
+            min_length=44,
+        ),
+        AfterValidator(is_base64),
+    ]
+
 
 # Define the model for all responses.
 class Response(BaseModel):
@@ -83,50 +100,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-class MessageRetrievalModel(BaseRequestModel):
-    min_datetime: Annotated[
-        datetime | None,
-        Field(
-            description=(
-                'An optional datetime that filters out messages posted '
-                'any earlier than the supplied value. This is intended to '
-                'avoid unneccessarily repeating retrievals.'
-            ),
-            default=None,
-        ),
-    ]
 
-@app.post("/messages/retrieve")
-async def retrieve_messages(request: MessageRetrievalModel):
-    retrieved_messages = await operations.get_messages(
-        engine=engine,
-        recipient_key=request.public_key,
-        min_datetime=request.min_datetime,
-    )
-    return Response(
-        status='success',
-        message=f'{len(retrieved_messages)} messages retrieved.',
-        data={
-            'messages': retrieved_messages,
-        }
-    )
-
-
-class OutgoingMessageModel(BaseRequestModel):
-    recipient_public_key: Annotated[
-        str,
-        Field(
-            description=(
-                'A Base64 representation of a 32-byte value. This should '
-                'correspond to a Ed25519 public key owned by the desired '
-                'recipient of the message.'
-            ),
-            examples=[urlsafe_b64encode(b'efgh' * 8)],
-            max_length=44,
-            min_length=44,
-        ),
-        AfterValidator(is_base64),
-    ]
+class OutboundMessageModel(PublicKeyModel, RecipientPublicKeyModel):
     encrypted_text: Annotated[
         str,
         Field(
@@ -143,18 +118,18 @@ class OutgoingMessageModel(BaseRequestModel):
         Field(
             description=(
                 'A Base64 representation of a 64-byte value. This should '
-                'correspond to signature produced from the sender signing the '
-                'Fernet token with an Ed25519 private key.'
+                'correspond to a signature produced from the sender signing '
+                'the Fernet token with an Ed25519 private key.'
             ),
             max_length=88,
             min_length=88,
-            examples=[urlsafe_b64encode(b'zyxwvuts' * 8)],
+            examples=[urlsafe_b64encode(token_bytes(64))],
         ),
         AfterValidator(is_base64),
     ]
 
 @app.post("/messages/send")
-async def post_message(message: OutgoingMessageModel):
+async def post_message(message: OutboundMessageModel):
     posted_message = await operations.create_message(
         engine=engine,
         encrypted_text=message.encrypted_text,
@@ -164,14 +139,117 @@ async def post_message(message: OutgoingMessageModel):
     )
     return Response(
         status='success',
-        message='Message sent.',
+        message='Message sent successfully.',
         data={
             'message_timestamp': posted_message.timestamp,
         }
     )
 
+class InboundMessagesModel(PublicKeyModel):
+    min_datetime: Annotated[
+        datetime | None,
+        Field(
+            description=(
+                'An optional datetime that filters out messages posted '
+                'any earlier than the supplied value. This is intended to '
+                'avoid unneccessarily repeating retrievals.'
+            ),
+            default=None,
+        ),
+    ]
+
+@app.post("/messages/retrieve")
+async def retrieve_messages(request: InboundMessagesModel):
+    retrieved_messages = await operations.get_messages(
+        engine=engine,
+        recipient_key=request.public_key,
+        min_datetime=request.min_datetime,
+    )
+    return Response(
+        status='success',
+        message=f'{len(retrieved_messages)} messages retrieved.',
+        data={
+            'messages': retrieved_messages,
+        }
+    )
+
+class OutboundKeyExchange(PublicKeyModel, RecipientPublicKeyModel):
+    x25519_public_key: Annotated[
+        str,
+        Field(
+            description=(
+                'A Base64 representation of a 32-byte value. This should '
+                'correspond to the public key of an X25519 key pair generated '
+                'by the sender of the request.'
+            ),
+            max_length=44,
+            min_length=44,
+            examples=[urlsafe_b64encode(token_bytes(32))],
+        ),
+        AfterValidator(is_base64),
+    ]
+    signature: Annotated[
+        str,
+        Field(
+            description=(
+                'A Base64 representation of a 64-byte value. This should '
+                'correspond to a signature produced from the sender signing '
+                'the raw X25519 key bytes with an Ed25519 private key.'
+            ),
+            max_length=88,
+            min_length=88,
+            examples=[urlsafe_b64encode(token_bytes(64))],
+        ),
+        AfterValidator(is_base64),
+    ]
+
+@app.post("/key_exchange/send")
+async def post_key_exchange(key_exchange: OutboundKeyExchange):
+    posted_key_exchange = await operations.create_key_exchange(
+        engine=engine,
+        x25519_public_key=key_exchange.x25519_public_key,
+        signature=key_exchange.signature,
+        sender_key=key_exchange.public_key,
+        recipient_key=key_exchange.recipient_public_key,
+    )
+    return Response(
+        status='success',
+        message='Key sent successfully.',
+        data={
+            'key_exchange_timestamp': posted_key_exchange.timestamp,
+        }
+    )
+
+class InboundKeyExchangesModel(PublicKeyModel):
+    min_datetime: Annotated[
+        datetime | None,
+        Field(
+            description=(
+                'An optional datetime that filters out key exchanges posted '
+                'any earlier than the supplied value. This is intended to '
+                'avoid unneccessarily repeating retrievals.'
+            ),
+            default=None,
+        ),
+    ]
+
+@app.post("/key_exchange/retrieve")
+async def retrieve_key_exchanges(request: InboundKeyExchangesModel):
+    retrieved_key_exchanges = await operations.get_key_exchanges(
+        engine=engine,
+        recipient_key=request.public_key,
+        min_datetime=request.min_datetime,
+    )
+    return Response(
+        status='success',
+        message=f'{len(retrieved_key_exchanges)} key exchanges retrieved.',
+        data={
+            'key_exchanges': retrieved_key_exchanges,
+        }
+    )
+
 @app.post("/")
-async def read_root1(body: BaseRequestModel):
+async def read_root1(body: PublicKeyModel):
     # print(body.public_key)
     # print(type(body.public_key))
     return {
