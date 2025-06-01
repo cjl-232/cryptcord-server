@@ -203,7 +203,7 @@ class OutboundKeyExchange(PublicKeyModel, RecipientPublicKeyModel):
         AfterValidator(is_base64),
     ]
 
-@app.post("/key_exchange/send")
+@app.post("/key_exchanges/send")
 async def post_key_exchange(key_exchange: OutboundKeyExchange):
     posted_key_exchange = await operations.create_key_exchange(
         engine=engine,
@@ -233,7 +233,7 @@ class InboundKeyExchangesModel(PublicKeyModel):
         ),
     ]
 
-@app.post("/key_exchange/retrieve")
+@app.post("/key_exchanges/retrieve")
 async def retrieve_key_exchanges(request: InboundKeyExchangesModel):
     retrieved_key_exchanges = await operations.get_key_exchanges(
         engine=engine,
