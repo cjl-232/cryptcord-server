@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database.models import EncryptedMessage, User
+from database._models import EncryptedMessage, User
 from database.utilities import get_user_id
 from exceptions import MalformedDataError
 from json_types import JSONDict, JSONType
@@ -26,8 +26,11 @@ async def post_message(
     session.add(message)
     await session.commit()
     return {
-        'status': 200,
+        'status': 201,
         'message': 'Message posted successfully.',
+        'data': {
+            'timestamp': message.timestamp.isoformat(),
+        }
     }
 
 async def retrieve_messages(

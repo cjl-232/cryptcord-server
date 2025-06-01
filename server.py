@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 import exceptions
 
-from database import models, utilities
+from database import _models, utilities
 from handlers import key_exchanges, messages
 from json_types import JSONDict
 
@@ -72,6 +72,7 @@ class Server:
                 
             # Extract the request from the raw bytes.
             request = json.loads(raw_request.decode())
+            print(request)
             if not isinstance(request['data'], dict):
                 raise exceptions.MalformedRequestError
             elif not isinstance(request['public_key'], str):
@@ -90,12 +91,12 @@ class Server:
             public_key.verify(signature_bytes, data_bytes)
 
             # Attempt to handle the data.
-            if not data['command'] in _DATA_HANDLERS:
+            if not data['action'] in _DATA_HANDLERS:
                 raise exceptions.UnrecognisedCommandError()
             
-            handler = _DATA_HANDLERS[data['command']]
+            handler = _DATA_HANDLERS[data['action']]
 
-            async with AsyncSession(self.engine) as session:
+            async with AsyncSession(self.engine, expire_on_commit=False) as session:
                 user_id = await utilities.get_user_id(
                     session=session,
                     public_key=request['public_key'],
@@ -114,8 +115,10 @@ class Server:
                 ),
             }
         except Exception as e:
-            print(e)
-            exit()
+            response: JSONDict = {
+                'status': 500,
+                'message': str(e),
+            }
         # except Exception as e:
         #     response: JSONDict = {
         #         'status': 500,
@@ -133,8 +136,8 @@ class Server:
     async def main(self):
         """Set up the database, then begin listening for connections."""
         async with self.engine.begin() as conn:
-            await conn.run_sync(models.Base.metadata.drop_all)
-            await conn.run_sync(models.Base.metadata.create_all)
+            await conn.run_sync(_models.Base.metadata.drop_all)
+            await conn.run_sync(_models.Base.metadata.create_all)
         server = await asyncio.start_server(
             client_connected_cb=self._listen,
             host=self.host,

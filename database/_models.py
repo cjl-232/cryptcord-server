@@ -39,20 +39,20 @@ class EncryptedMessage(Base):
     id: Mapped[int] = mapped_column(
         primary_key=True,
     )
-    encrypted_text: Mapped[str] = mapped_column(
+    ciphertext: Mapped[str] = mapped_column(
         Text(),
     )
     signature: Mapped[str] = mapped_column(
         String(88),
     )
-    sender_id: Mapped[int] = mapped_column(
-        ForeignKey('users.id', ondelete='CASCADE', onupdate='CASCADE'),
-    )
     recipient_id: Mapped[int] = mapped_column(
         ForeignKey('users.id', ondelete='CASCADE', onupdate='CASCADE'),
     )
+    sender_id: Mapped[int] = mapped_column(
+        ForeignKey('users.id', ondelete='CASCADE', onupdate='CASCADE'),
+    )
     timestamp: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
+        DateTime(),
         default=datetime.now,
     )
     recipient: Mapped[User] = relationship(
