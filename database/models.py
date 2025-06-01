@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, ForeignKey, func, Index
+from sqlalchemy import CheckConstraint, ForeignKey, Index
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.types import DateTime, String, Text
 
@@ -32,7 +32,7 @@ class User(Base):
 class EncryptedMessage(Base):
     __tablename__ = 'encrypted_messages'
     __table_args__ = (
-        Index('idx_msgs_retrieval', 'recipient_id', 'timestamp', unique=True),
+        Index('idx_msgs_retrieval', 'recipient_id', 'timestamp'),
         CheckConstraint('recipient_id != sender_id'),
     )
 
@@ -58,8 +58,10 @@ class EncryptedMessage(Base):
     recipient: Mapped[User] = relationship(
         back_populates='received_messages',
         foreign_keys=[recipient_id],
+        lazy='selectin',
     )
     sender: Mapped[User] = relationship(
         back_populates='sent_messages',
         foreign_keys=[sender_id],
+        lazy='selectin',
     )
