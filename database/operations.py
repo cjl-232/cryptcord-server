@@ -47,11 +47,16 @@ async def create_message(
 async def get_messages(
         engine: AsyncEngine,
         recipient_key: str,
+        contact_keys: list[str] | None = None,
         min_datetime: datetime | None = None,
     ) -> list[dict[str, Any]]:
     user = await get_or_create_user(engine, recipient_key)
     statement = select(EncryptedMessage)
     statement = statement.where(EncryptedMessage.recipient_id == user.id)
+    if contact_keys:
+        statement = statement.where(
+            EncryptedMessage.sender_id.in_(contact_keys),
+        )
     if min_datetime is not None:
         statement = statement.where(EncryptedMessage.timestamp >= min_datetime)
     statement = statement.order_by(EncryptedMessage.timestamp)
@@ -63,6 +68,7 @@ async def get_messages(
                 'encrypted_text': message.encrypted_text,
                 'signature': message.signature,
                 'timestamp': message.timestamp,
+                'nonce': message.id,
             }
             for message in messages
         ]
@@ -91,11 +97,16 @@ async def create_key_exchange(
 async def get_key_exchanges(
         engine: AsyncEngine,
         recipient_key: str,
+        contact_keys: list[str] | None = None,
         min_datetime: datetime | None = None,
     ) -> list[dict[str, Any]]:
     user = await get_or_create_user(engine, recipient_key)
     statement = select(KeyExchange)
     statement = statement.where(KeyExchange.recipient_id == user.id)
+    if contact_keys:
+        statement = statement.where(
+            EncryptedMessage.sender_id.in_(contact_keys),
+        )
     if min_datetime is not None:
         statement = statement.where(KeyExchange.timestamp >= min_datetime)
     async with AsyncSession(engine) as session:

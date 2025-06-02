@@ -145,6 +145,16 @@ async def post_message(message: OutboundMessageModel):
     )
 
 class InboundMessagesModel(PublicKeyModel):
+    contact_keys: Annotated[
+        list[str] | None,
+        Field(
+            description=(
+                'A list of keys belonging to users the requester is willing '
+                'to accept messages and key exchanges from.'
+            ),
+            default=None,
+        )
+    ]
     min_datetime: Annotated[
         datetime | None,
         Field(
@@ -162,6 +172,7 @@ async def retrieve_messages(request: InboundMessagesModel):
     retrieved_messages = await operations.get_messages(
         engine=engine,
         recipient_key=request.public_key,
+        contact_keys=request.contact_keys,
         min_datetime=request.min_datetime,
     )
     return Response(
@@ -220,6 +231,16 @@ async def post_key_exchange(key_exchange: OutboundKeyExchange):
     )
 
 class InboundKeyExchangesModel(PublicKeyModel):
+    contact_keys: Annotated[
+        list[str] | None,
+        Field(
+            description=(
+                'A list of keys belonging to users the requester is willing '
+                'to accept messages and key exchanges from.'
+            ),
+            default=None,
+        )
+    ]
     min_datetime: Annotated[
         datetime | None,
         Field(
@@ -237,6 +258,7 @@ async def retrieve_key_exchanges(request: InboundKeyExchangesModel):
     retrieved_key_exchanges = await operations.get_key_exchanges(
         engine=engine,
         recipient_key=request.public_key,
+        contact_keys=request.contact_keys,
         min_datetime=request.min_datetime,
     )
     return Response(
