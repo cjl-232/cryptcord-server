@@ -79,6 +79,9 @@ class EncryptedMessage(Base):
         foreign_keys=[sender_id],
         lazy='selectin',
     )
+    @property
+    def sender_key(self):
+        return self.sender.public_key
 
 class KeyExchange(Base):
     __tablename__ = 'key_exchanges'

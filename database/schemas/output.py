@@ -1,17 +1,6 @@
 from datetime import datetime
-from typing import Annotated
 
-from pydantic import BaseModel, BeforeValidator, ConfigDict
-
-from database.models import User
-
-def _validate_user(user: User) -> str:
-    return user.public_key
-
-type _User = Annotated[
-    str,
-    BeforeValidator(_validate_user),
-]
+from pydantic import BaseModel, ConfigDict
 
 class CreatedMessageOutputSchema(BaseModel):
     """A schema to retrieve metadata after posting a message."""
@@ -24,7 +13,7 @@ class MessageOutputSchema(BaseModel):
     """A schema used when retrieving message instances."""
     model_config = ConfigDict(from_attributes=True)
 
-    sender: _User
+    sender_key: str
     encrypted_text: str
     signature: str
     timestamp: datetime

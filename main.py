@@ -136,7 +136,9 @@ class OutboundMessageModel(PublicKeyModel, RecipientPublicKeyModel):
     ]
 
 @app.post("/messages/send")
-async def post_message(request: PostMessageRequestModel):
+async def post_message(
+    request: PostMessageRequestModel,
+) -> PostMessageResponseModel:
     """
     Post an encrypted message to the server.
 
@@ -161,7 +163,9 @@ async def post_message(request: PostMessageRequestModel):
     return response
 
 @app.post("/messages/retrieve")
-async def retrieve_messages(request: RetrieveMessagesRequestModel):
+async def retrieve_messages(
+    request: RetrieveMessagesRequestModel,
+) -> RetrieveMessagesResponseModel:
     """
     Retrieve encrypted messages stored on the server.
 
