@@ -53,6 +53,7 @@ class _BaseRequestModel(BaseModel):
                 'The Base64-encoding of a 32-byte public key owned by the '
                 'user.'
             ),
+            examples=['PBiNdoolrxt0FdTiAA2wSbG4eoKClTJEP2JoVFGrWU0='],
         ),
     ]
 
@@ -66,6 +67,13 @@ class _RetrievalFilterModel(BaseModel):
                 'retrieved.'
             ),
             default=None,
+            examples=[
+                [
+                    'XuPFHG1T6MfukWZSDEjLCAqFFh9EAUWUYRZow_1FJ6c=',
+                    '1pkkOi6TX-o8RTU4NAZXT6SRcaUu6DFKIg7eMB9ujD8=',
+                    'Vx_ZU7jYWd-csCdgK3gRZRRBmTdkV3VCV-clcbzxaBg=',
+                ]
+            ],
         ),
     ]
     min_datetime: Annotated[
@@ -88,6 +96,7 @@ class PostKeyExchangeRequestModel(_BaseRequestModel):
                 'The Base64-encoding of a 32-byte public key owned by the '
                 'desired recipient of the key exchange.'
             ),
+            examples=['TMkABteGZVYRjdbupBupB7nmiTmZ9C_JugYNw0Xsp7w='],
         ),
         
     ]
@@ -95,6 +104,7 @@ class PostKeyExchangeRequestModel(_BaseRequestModel):
         _PublicKey,
         Field(
             description=('The Base64-encoding of a 32-byte exchange key.'),
+            examples=['bR-PDpKYqMOv-rxKWBBoEbI5PPyXyIyKXAh6XmMp7TI='],
         ),
     ]
     signature: Annotated[
@@ -105,6 +115,12 @@ class PostKeyExchangeRequestModel(_BaseRequestModel):
                 'raw bytes of the transmitted exchange key with the private '
                 'key corresponding to the sender\'s public key.'
             ),
+            examples=[
+                (
+                    'DF2AqxtW6uFQQh0Z2XeMB9MkM12od126WjKGpTGbynhh8_zAkuFHg_jT_'
+                    '7b3vy41PO2n5dJZykM8PTqj8di7AQ=='
+                )
+            ]
         ),
     ]
 
@@ -116,6 +132,7 @@ class PostMessageRequestModel(_BaseRequestModel):
                 'The Base64-encoding of a 32-byte public key owned by the '
                 'desired recipient of the encrypted message.'
             ),
+            examples=['oiAftUmc3OcUWUzkLGmmttv0F9vjwjC0gX6p9FQvZC0='],
         ),
     ]
     encrypted_text: Annotated[
@@ -124,9 +141,16 @@ class PostMessageRequestModel(_BaseRequestModel):
             description=(
                 'A Base64-encoding of the encrypted message, generated using '
                 'a shared secret encryption key prior to transmission. This '
-                'should typically be the output of a Fernet '
-                'encryption.'
+                'should typically be the output of a Fernet encryption, which '
+                'is already Base64-encoded.'
             ),
+            examples=[
+                (
+                    'gAAAAABoQtwrJw3saJMxOIaMBAQURKulgp3ch8wK2bnE4ynBk7vEd8_VO'
+                    'uTZqc07MFo3ZJv2qxGJ534MYxeLLsj0B6uvpjPdpAWX8R_ABQz3gWOPM3'
+                    'LwSSAYR7CeYRhUwVeHI5GgZlms'
+                ),
+            ]
         ),
     ]
     signature: Annotated[
@@ -137,6 +161,12 @@ class PostMessageRequestModel(_BaseRequestModel):
                 'encrypted message. The signature should typically be '
                 'generated directly from the output of a Fernet encryption.'
             ),
+            examples=[
+                (
+                    'dAQh05FB_982yP9EixN_1nCwKKj1UpbIYLMFzqXIJG6_jNMU2gMQVWizn'
+                    'd0FwGViIpZ9udDMmyti7cNDa31oBg=='
+                ),
+            ]
         ),
     ]
 
