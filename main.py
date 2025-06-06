@@ -15,6 +15,14 @@ from fastapi import FastAPI
 from pydantic import AfterValidator, BaseModel, Field
 from sqlalchemy.ext.asyncio import create_async_engine
 
+from connections.schemas.requests import (
+    PostMessageRequestModel,
+    RetrieveMessagesRequestModel,
+)
+from connections.schemas.responses import (
+    RetrieveMessagesResponseModel,
+    PostMessageResponseModel,
+)
 from database import operations
 from database.models import Base
 
@@ -128,60 +136,55 @@ class OutboundMessageModel(PublicKeyModel, RecipientPublicKeyModel):
     ]
 
 @app.post("/messages/send")
-async def post_message(message: OutboundMessageModel):
-    posted_message = await operations.create_message(
-        engine=engine,
-        encrypted_text=message.encrypted_text,
-        signature=message.signature,
-        sender_key=message.public_key,
-        recipient_key=message.recipient_public_key,
-    )
-    return Response(
-        status='success',
-        message='Message sent successfully.',
-        data={
-            'message_timestamp': posted_message.timestamp,
-        }
-    )
+async def post_message(request: PostMessageRequestModel):
+    """
+    Post an encrypted message to the server.
 
-class InboundMessagesModel(PublicKeyModel):
-    contact_keys: Annotated[
-        list[str] | None,
-        Field(
-            description=(
-                'A list of keys belonging to users the requester is willing '
-                'to accept messages and key exchanges from.'
-            ),
-            default=None,
-        )
-    ]
-    min_datetime: Annotated[
-        datetime | None,
-        Field(
-            description=(
-                'An optional datetime that filters out messages posted '
-                'any earlier than the supplied value. This is intended to '
-                'avoid unneccessarily repeating retrievals.'
-            ),
-            default=None,
-        ),
-    ]
+    This request requires the user's public key, a public key belonging to
+    the intended recipient, the encrypted text itself, and a signature
+    generated from the user's private key being used on the encrypted text.
+    The message **must** be encrypted with a secret key shared only by the user
+    and the recipient, as it will otherwise be accessible by anyone who knows
+    the recipient's public key. The response will contain the timestamp at
+    which the message was successfully stored on the server, and a unique
+    16-byte hexadecimal identifier for the message.
+    """
+    message_data = await operations.create_message(engine, request)
+    response = PostMessageResponseModel.model_validate({
+        'status': 'success',
+        'message': 'Message successfully posted.',
+        'data': {
+            'timestamp': message_data.timestamp,
+            'nonce': message_data.nonce,
+        },
+    })
+    return response
 
 @app.post("/messages/retrieve")
-async def retrieve_messages(request: InboundMessagesModel):
-    retrieved_messages = await operations.get_messages(
-        engine=engine,
-        recipient_key=request.public_key,
-        contact_keys=request.contact_keys,
-        min_datetime=request.min_datetime,
-    )
-    return Response(
-        status='success',
-        message=f'{len(retrieved_messages)} messages retrieved.',
-        data={
-            'messages': retrieved_messages,
-        }
-    )
+async def retrieve_messages(request: RetrieveMessagesRequestModel):
+    """
+    Retrieve encrypted messages stored on the server.
+
+    This request requires the user's public key, and will retrieve all messages
+    stored on the server that are addressed to that public key. To limit the
+    size of responses, the user may optionally provide a 'whitelist' of
+    public keys, retrieving only messages from one of these, or a minimum
+    datetime for the message's timestamp, retrieving only messages sent at or
+    after this datetime. The response will contain a list of messages, each
+    with the sender's public key, the encrypted text, a signature that should
+    be used to verify the authenticity of the message, the timestamp at which
+    it was stored on the server, and a unique 16-byte hexadecimal identifier
+    for the message.
+    """
+    messages = await operations.retrieve_messages(engine, request)
+    response = RetrieveMessagesResponseModel.model_validate({
+        'status': 'success',
+        'message': f'{len(messages)} messages retrieved.',
+        'data': {
+            'messages': messages,
+        },
+    })
+    return response
 
 class OutboundKeyExchange(PublicKeyModel, RecipientPublicKeyModel):
     x25519_public_key: Annotated[

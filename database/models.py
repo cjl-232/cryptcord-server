@@ -1,4 +1,5 @@
 from datetime import datetime
+from secrets import token_hex
 
 from sqlalchemy import CheckConstraint, ForeignKey, Index
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -64,6 +65,9 @@ class EncryptedMessage(Base):
     timestamp: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=datetime.now,
+    )
+    nonce: Mapped[str] = mapped_column(
+        default=lambda: token_hex(16),
     )
     recipient: Mapped[User] = relationship(
         back_populates='received_messages',
