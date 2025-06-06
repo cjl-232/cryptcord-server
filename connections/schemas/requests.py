@@ -88,7 +88,7 @@ class _RetrievalFilterModel(BaseModel):
         ),
     ]
 
-class PostKeyExchangeRequestModel(_BaseRequestModel):
+class PostExchangeKeyRequestModel(_BaseRequestModel):
     recipient_public_key: Annotated[
         _PublicKey,
         Field(
@@ -170,5 +170,5 @@ class PostMessageRequestModel(_BaseRequestModel):
         ),
     ]
 
-class RetrieveMessagesRequestModel(_BaseRequestModel, _RetrievalFilterModel):
+class RetrievalRequestModel(_BaseRequestModel, _RetrievalFilterModel):
     pass
