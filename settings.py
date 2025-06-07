@@ -16,8 +16,8 @@ def _validate_max_plaintext_length(value: int) -> int:
 type _MaxPlaintextLength = Annotated[
     int,
     AfterValidator(_validate_max_plaintext_length),
-]    
-    
+]
+
 class _SettingsModel(BaseModel):
     model_config = ConfigDict(validate_default=True)
     max_plaintext_length: _MaxPlaintextLength = 2000
@@ -36,7 +36,7 @@ def _load_settings():
     if not os.path.exists('settings.yaml'):
         with open('settings.yaml', 'w') as _:
             pass
-    
+
     # Load settings from the file.
     with open('settings.yaml', 'r') as file:
         _data = yaml.safe_load(file)
@@ -44,7 +44,7 @@ def _load_settings():
             settings = _SettingsModel.model_validate(_data)
         else:
             settings = _SettingsModel.model_validate({})
-        
+
     # Add default values to the file.
     with open('settings.yaml', 'w') as file:
         yaml.safe_dump(settings.model_dump(), file)
