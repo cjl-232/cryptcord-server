@@ -6,6 +6,8 @@ from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, Field
 
+from settings import settings
+
 def _validate_public_key(value: str) -> str:
     try:
         raw_bytes = urlsafe_b64decode(value)
@@ -17,7 +19,15 @@ def _validate_public_key(value: str) -> str:
 
 def _validate_message(value: str) -> str:
     try:
-        return urlsafe_b64encode(urlsafe_b64decode(value)).decode()
+        message = urlsafe_b64encode(urlsafe_b64decode(value)).decode()
+        if len(message) > settings.max_ciphertext_length:
+            raise ValueError((
+                f'Message is too large. The maximum ciphertext length for a '
+                f'single request is {settings.max_ciphertext_length} bytes. '
+                f'This corresponds to a maximum plaintext length of '
+                f'{settings.effective_max_plaintext_length} bytes.'
+            ))
+        return message
     except binascii.Error:
         raise ValueError('Value is not valid Base64')
 
