@@ -4,7 +4,10 @@ from base64 import urlsafe_b64decode, urlsafe_b64encode
 from datetime import datetime
 from typing import Annotated
 
-from pydantic import AfterValidator, BaseModel, Field
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+from fastapi import HTTPException
+from pydantic import AfterValidator, BaseModel, Field, model_validator
 
 from settings import settings
 
@@ -134,6 +137,20 @@ class PostExchangeKeyRequestModel(_BaseRequestModel):
         ),
     ]
 
+    @model_validator(mode='after')
+    def validate_key_authenticity(self):
+        if settings.validate_posted_data:
+            key_bytes = urlsafe_b64decode(self.public_key)
+            verification_key = Ed25519PublicKey.from_public_bytes(key_bytes)
+            try:
+                verification_key.verify(
+                    signature=urlsafe_b64decode(self.signature),
+                    data=urlsafe_b64decode(self.exchange_key),
+                )
+            except InvalidSignature:
+                raise HTTPException(401, 'Invalid signature')
+        return self
+
 class PostMessageRequestModel(_BaseRequestModel):
     recipient_public_key: Annotated[
         _PublicKey,
@@ -179,6 +196,20 @@ class PostMessageRequestModel(_BaseRequestModel):
             ]
         ),
     ]
+
+    @model_validator(mode='after')
+    def validate_message_authenticity(self):
+        if settings.validate_posted_data:
+            key_bytes = urlsafe_b64decode(self.public_key)
+            verification_key = Ed25519PublicKey.from_public_bytes(key_bytes)
+            try:
+                verification_key.verify(
+                    signature=urlsafe_b64decode(self.signature),
+                    data=urlsafe_b64decode(self.encrypted_text),
+                )
+            except InvalidSignature:
+                raise HTTPException(401, 'Invalid signature')
+        return self
 
 class RetrievalRequestModel(_BaseRequestModel, _RetrievalFilterModel):
     pass

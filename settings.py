@@ -21,6 +21,7 @@ type _MaxPlaintextLength = Annotated[
 class _SettingsModel(BaseModel):
     model_config = ConfigDict(validate_default=True)
     max_plaintext_length: _MaxPlaintextLength = 2000
+    validate_posted_data: bool = False
 
     @cached_property
     def effective_max_plaintext_length(self):
