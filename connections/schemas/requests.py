@@ -205,7 +205,7 @@ class PostMessageRequestModel(_BaseRequestModel):
             try:
                 verification_key.verify(
                     signature=urlsafe_b64decode(self.signature),
-                    data=urlsafe_b64decode(self.encrypted_text),
+                    data=self.encrypted_text.encode(),
                 )
             except InvalidSignature:
                 raise HTTPException(401, 'Invalid signature')
