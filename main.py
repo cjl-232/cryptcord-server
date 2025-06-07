@@ -1,11 +1,7 @@
-#TODO move config file (yaml form?) into a settings pydantic model to reference
-# Reference it by importing it from a file?
-
 import os
 
 from contextlib import asynccontextmanager
 
-from cryptography.fernet import Fernet
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -22,14 +18,6 @@ from connections.schemas.responses import (
 )
 from database import operations
 from database.models import Base
-
-# Set key constants.
-MAX_PLAINTEXT_LENGTH = 2000
-MAX_CIPHERTEXT_LENGTH = len(
-    Fernet(Fernet.generate_key()).encrypt(
-        bytes(MAX_PLAINTEXT_LENGTH),
-    ),
-)
 
 # Load environment variables and use them to create the engine object.
 load_dotenv()
@@ -63,7 +51,9 @@ async def post_message(
 
     This request requires the user's public key, a public key belonging to
     the intended recipient, the encrypted text itself, and a signature
-    generated from the user's private key being used on the encrypted text.
+    generated from the user's private key being used on Base-64 encoded bytes
+    corresponding to the encrypted text. In the typical case where Fernet
+    encryption is used, the signature can be generated on the output directly.
     The message **must** be encrypted with a secret key shared only by the user
     and the recipient, as it will otherwise be accessible by anyone who knows
     the recipient's public key. The response will contain the timestamp at
@@ -124,7 +114,9 @@ async def post_exchange_key(
     Once the initial sender retrieves the recipent's ephemeral public key,
     both parties will be able to derive a shared secret value by combining
     their own ephmeral private key with their counterpart's ephemeral public
-    key.
+    key. The response will contain the timestamp at which the key was
+    successfully stored on the server, and a unique 16-byte hexadecimal
+    identifier for the key.
     """
     exchange_key_data = await operations.create_exchange_key(engine, request)
     response = PostDataResponseModel.model_validate({
