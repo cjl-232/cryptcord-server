@@ -99,7 +99,7 @@ async def retrieve_messages(
     })
     return response
 
-@app.post("/exchange_keys/post")
+@app.post("/exchange-keys/post")
 async def post_exchange_key(
     request: PostExchangeKeyRequestModel,
 ) -> PostDataResponseModel:
@@ -127,7 +127,7 @@ async def post_exchange_key(
     })
     return response
 
-@app.post("/exchange_keys/retrieve")
+@app.post("/exchange-keys/retrieve")
 async def retrieve_exchange_keys(
     request: RetrievalRequestModel,
 ) -> RetrieveExchangeKeysResponseModel:
