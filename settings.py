@@ -40,9 +40,9 @@ def _load_settings():
 
     # Load settings from the file.
     with open('settings.yaml', 'r') as file:
-        _data = yaml.safe_load(file)
-        if isinstance(_data, dict):
-            settings = _SettingsModel.model_validate(_data)
+        data = yaml.safe_load(file)
+        if isinstance(data, dict):
+            settings = _SettingsModel.model_validate(data)
         else:
             settings = _SettingsModel.model_validate({})
 
