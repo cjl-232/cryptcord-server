@@ -42,7 +42,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-@app.post("/messages/send")
+@app.post("/messages/post")
 async def post_message(
     request: PostMessageRequestModel,
 ) -> PostDataResponseModel:
@@ -99,7 +99,7 @@ async def retrieve_messages(
     })
     return response
 
-@app.post("/exchange_keys/send")
+@app.post("/exchange_keys/post")
 async def post_exchange_key(
     request: PostExchangeKeyRequestModel,
 ) -> PostDataResponseModel:
