@@ -111,7 +111,7 @@ class PostExchangeKeyRequestModel(_BaseRequestModel):
             ),
             examples=['TMkABteGZVYRjdbupBupB7nmiTmZ9C_JugYNw0Xsp7w='],
         ),
-        
+
     ]
     exchange_key: Annotated[
         _PublicKey,
@@ -136,9 +136,17 @@ class PostExchangeKeyRequestModel(_BaseRequestModel):
             ]
         ),
     ]
+    response_to: Annotated[
+        _PublicKey | None,
+        Field(
+            description=('The Base64-encoding of a 32-byte exchange key.'),
+            examples=['nejkSizpsvXcGjQwQCZqiilvlVhkzFWq4qT30o79FtA='],
+            default=None,
+        ),
+    ]
 
     @model_validator(mode='after')
-    def validate_key_authenticity(self):
+    def _validate_key_authenticity(self):
         if settings.validate_posted_data:
             key_bytes = urlsafe_b64decode(self.public_key)
             verification_key = Ed25519PublicKey.from_public_bytes(key_bytes)
@@ -198,7 +206,7 @@ class PostMessageRequestModel(_BaseRequestModel):
     ]
 
     @model_validator(mode='after')
-    def validate_message_authenticity(self):
+    def _validate_message_authenticity(self):
         if settings.validate_posted_data:
             key_bytes = urlsafe_b64decode(self.public_key)
             verification_key = Ed25519PublicKey.from_public_bytes(key_bytes)

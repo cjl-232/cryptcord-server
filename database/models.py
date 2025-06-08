@@ -48,13 +48,16 @@ class _TransmittedData(Base):
     )
     signature: Mapped[str] = mapped_column(
         String(88),
+        nullable=False,
     )
     timestamp: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=datetime.now,
+        nullable=False,
     )
     nonce: Mapped[str] = mapped_column(
         default=lambda: token_hex(16),
+        nullable=False,
     )
 
 class Message(_TransmittedData):
@@ -65,12 +68,15 @@ class Message(_TransmittedData):
     )
     encrypted_text: Mapped[str] = mapped_column(
         Text(),
+        nullable=False,
     )
     sender_id: Mapped[int] = mapped_column(
         ForeignKey('users.id', ondelete='CASCADE', onupdate='CASCADE'),
+        nullable=False,
     )
     recipient_id: Mapped[int] = mapped_column(
         ForeignKey('users.id', ondelete='CASCADE', onupdate='CASCADE'),
+        nullable=False,
     )
     sender: Mapped[User] = relationship(
         back_populates='sent_messages',
@@ -94,12 +100,19 @@ class ExchangeKey(_TransmittedData):
     )
     key: Mapped[str] = mapped_column(
         String(44),
+        nullable=False,
+    )
+    response_to: Mapped[str | None] = mapped_column(
+        String(44),
+        nullable=True,
     )
     sender_id: Mapped[int] = mapped_column(
         ForeignKey('users.id', ondelete='CASCADE', onupdate='CASCADE'),
+        nullable=False,
     )
     recipient_id: Mapped[int] = mapped_column(
         ForeignKey('users.id', ondelete='CASCADE', onupdate='CASCADE'),
+        nullable=False,
     )
     sender: Mapped[User] = relationship(
         back_populates='sent_exchange_keys',

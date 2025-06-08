@@ -57,7 +57,7 @@ async def post_message(
     The message **must** be encrypted with a secret key shared only by the user
     and the recipient, as it will otherwise be accessible by anyone who knows
     the recipient's public key. The response will contain the timestamp at
-    which the message was successfully stored on the server, and a unique
+    which the message was successfully stored on the server and a unique
     16-byte hexadecimal identifier for the message.
     """
     message_data = await operations.create_message(engine, request)
@@ -108,14 +108,12 @@ async def post_exchange_key(
 
     This request requires the user's public key, a public key belonging to
     the intended recipient, the public key from an ephemeral 32-byte key pair,
-    and a signature generated from the user's private key being used on the 
-    raw bytes of the ephemeral public key. Once retrieved by the recipient,
-    they can generate their own ephemeral key pair and transmit the public key.
-    Once the initial sender retrieves the recipent's ephemeral public key,
-    both parties will be able to derive a shared secret value by combining
-    their own ephmeral private key with their counterpart's ephemeral public
-    key. The response will contain the timestamp at which the key was
-    successfully stored on the server, and a unique 16-byte hexadecimal
+    and a signature generated from the user's private key being used on the
+    raw bytes of the ephemeral public key. If this is being sent after
+    receiving another ephemeral public key, it should also include that key,
+    and the user is free to derive the shared secret value locally after
+    a successful request. The response will contain the timestamp at which the
+    key was successfully stored on the server and a unique 16-byte hexadecimal
     identifier for the key.
     """
     exchange_key_data = await operations.create_exchange_key(engine, request)
@@ -139,10 +137,10 @@ async def retrieve_exchange_keys(
     This request requires the user's public key, and will retrieve all
     ephemeral keys stored on the server that are addressed to that public key.
     To limit the size of responses, the user may optionally provide a
-    'whitelist' of public keys, retrieving only messages from one of these, or
-    a minimum datetime for the message's timestamp, retrieving only messages
-    sent at or after this datetime. The response will contain a list of
-    ephemeral keys, each with the sender's public key, the ephemeral key
+    'whitelist' of public keys, retrieving only ephemeral keys from one of
+    these, or a minimum datetime for the ephemeral key's timestamp, retrieving
+    only keys sent at or after this datetime. The response will contain a list
+    of ephemeral keys, each with the sender's public key, the ephemeral key
     itself, a signature that **must** be used to verify the authenticity of
     the key, message, the timestamp at which it was stored on the server, and
     a unique 16-byte hexadecimal identifier for the ephemeral key.

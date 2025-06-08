@@ -16,6 +16,7 @@ class StoredExchangeKeyOutputSchema(BaseModel):
     sender_key: str
     timestamp: datetime
     nonce: str
+    response_to: str | None
 
 class StoredMessageOutputSchema(BaseModel):
     """A schema used when retrieving messages."""

@@ -34,7 +34,7 @@ async def get_or_create_user(
             result = await session.scalars(statement)
             user = result.one()
         return UserOutputSchema.model_validate(user)
-    
+
 async def create_message(
         engine: AsyncEngine,
         request: PostMessageRequestModel,
@@ -51,7 +51,7 @@ async def create_message(
         session.add(message)
         await session.commit()
         return PostedDataOutputSchema.model_validate(message)
-    
+
 async def retrieve_messages(
         engine: AsyncEngine,
         request: RetrievalRequestModel,
@@ -80,7 +80,7 @@ async def retrieve_messages(
             for message in await session.scalars(statement)
         ]
         return messages
-    
+
 async def create_exchange_key(
         engine: AsyncEngine,
         request: PostExchangeKeyRequestModel,
@@ -97,7 +97,7 @@ async def create_exchange_key(
         session.add(exchange_key)
         await session.commit()
         return PostedDataOutputSchema.model_validate(exchange_key)
-    
+
 async def retrieve_exchange_keys(
         engine: AsyncEngine,
         request: RetrievalRequestModel,
