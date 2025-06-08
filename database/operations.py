@@ -93,6 +93,7 @@ async def create_exchange_key(
             signature=request.signature,
             sender_id=sender.id,
             recipient_id=recipient.id,
+            response_to=request.response_to,
         )
         session.add(exchange_key)
         await session.commit()
