@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, UTC
 from secrets import token_hex
 
 from sqlalchemy import CheckConstraint, ForeignKey, Index
@@ -52,7 +52,7 @@ class _TransmittedData(Base):
     )
     timestamp: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=datetime.now,
+        default=lambda: datetime.now(UTC),
         nullable=False,
     )
     nonce: Mapped[str] = mapped_column(
