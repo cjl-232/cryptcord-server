@@ -15,7 +15,6 @@ class StoredExchangeKeyOutputSchema(BaseModel):
     signature: str
     sender_key: str
     timestamp: datetime
-    nonce: str
     response_to: str | None
 
 class StoredMessageOutputSchema(BaseModel):
