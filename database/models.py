@@ -55,10 +55,6 @@ class _TransmittedData(Base):
         default=lambda: datetime.now(UTC),
         nullable=False,
     )
-    nonce: Mapped[str] = mapped_column(
-        default=lambda: token_hex(16),
-        nullable=False,
-    )
 
 class Message(_TransmittedData):
     __tablename__ = 'messages'
@@ -87,6 +83,10 @@ class Message(_TransmittedData):
         back_populates='received_messages',
         foreign_keys=[recipient_id],
         lazy='selectin',
+    )
+    nonce: Mapped[str] = mapped_column(
+        default=lambda: token_hex(16),
+        nullable=False,
     )
     @property
     def sender_key(self):
