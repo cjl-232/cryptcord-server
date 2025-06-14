@@ -6,7 +6,7 @@ class PostedDataOutputSchema(BaseModel):
     """A schema to store metadata after posting a message or exchange key."""
     model_config = ConfigDict(from_attributes=True)
     timestamp: datetime
-    nonce: str
+    nonce: str | None = None
 
 class StoredExchangeKeyOutputSchema(BaseModel):
     """A schema used when retrieving exchange keys."""

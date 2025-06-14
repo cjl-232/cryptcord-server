@@ -112,8 +112,7 @@ async def post_exchange_key(
     receiving another ephemeral public key, it should also include that key,
     and the user is free to derive the shared secret value locally after
     a successful request. The response will contain the timestamp at which the
-    key was successfully stored on the server and a unique 16-byte hexadecimal
-    identifier for the key.
+    key was successfully stored on the server.
     """
     exchange_key_data = await operations.create_exchange_key(engine, request)
     response = PostDataResponseModel.model_validate({
@@ -121,7 +120,6 @@ async def post_exchange_key(
         'message': 'Exchange key successfully posted.',
         'data': {
             'timestamp': exchange_key_data.timestamp,
-            'nonce': exchange_key_data.nonce,
         },
     })
     return response
