@@ -90,11 +90,11 @@ async def create_exchange_key(
     recipient = await get_or_create_user(engine, request.recipient_public_key)
     async with AsyncSession(engine, expire_on_commit=False) as session:
         exchange_key = ExchangeKey(
-            key=request.exchange_key,
+            key=request.transmitted_exchange_key,
             signature=request.signature,
             sender_id=sender.id,
             recipient_id=recipient.id,
-            response_to=request.response_to,
+            response_to=request.initial_exchange_key,
         )
         session.add(exchange_key)
         await session.commit()

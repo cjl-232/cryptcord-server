@@ -113,7 +113,7 @@ class PostExchangeKeyRequestModel(_BaseRequestModel):
         ),
 
     ]
-    exchange_key: Annotated[
+    transmitted_exchange_key: Annotated[
         _PublicKey,
         Field(
             description=('The Base64-encoding of a 32-byte exchange key.'),
@@ -136,7 +136,7 @@ class PostExchangeKeyRequestModel(_BaseRequestModel):
             ]
         ),
     ]
-    response_to: Annotated[
+    initial_exchange_key: Annotated[
         _PublicKey | None,
         Field(
             description=('The Base64-encoding of a 32-byte exchange key.'),
@@ -153,7 +153,7 @@ class PostExchangeKeyRequestModel(_BaseRequestModel):
             try:
                 verification_key.verify(
                     signature=urlsafe_b64decode(self.signature),
-                    data=urlsafe_b64decode(self.exchange_key),
+                    data=urlsafe_b64decode(self.transmitted_exchange_key),
                 )
             except InvalidSignature:
                 raise HTTPException(401, 'Invalid signature')
