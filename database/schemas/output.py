@@ -2,11 +2,17 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
-class PostedDataOutputSchema(BaseModel):
-    """A schema to store metadata after posting a message or exchange key."""
-    model_config = ConfigDict(from_attributes=True)
+class _PostedDataOutputSchema(BaseModel):
     timestamp: datetime
-    nonce: str | None = None
+    class Config:
+        from_attributes = True
+
+class PostedMessageOutputSchema(_PostedDataOutputSchema):
+    """A schema to store metadata after posting a message."""
+    nonce: str
+
+class PostedExchangeKeyOutputSchema(_PostedDataOutputSchema):
+    """A schema to store metadata after posting an exchange key."""
 
 class StoredExchangeKeyOutputSchema(BaseModel):
     """A schema used when retrieving exchange keys."""

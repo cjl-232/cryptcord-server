@@ -9,7 +9,8 @@ from connections.schemas.requests import (
 )
 from database.models import Message, ExchangeKey, User
 from database.schemas.output import (
-    PostedDataOutputSchema,
+    PostedMessageOutputSchema,
+    PostedExchangeKeyOutputSchema,
     StoredExchangeKeyOutputSchema,
     StoredMessageOutputSchema,
     UserOutputSchema,
@@ -38,7 +39,7 @@ async def get_or_create_user(
 async def create_message(
         engine: AsyncEngine,
         request: PostMessageRequestModel,
-    ) -> PostedDataOutputSchema:
+    ) -> PostedMessageOutputSchema:
     sender = await get_or_create_user(engine, request.public_key)
     recipient = await get_or_create_user(engine, request.recipient_public_key)
     async with AsyncSession(engine, expire_on_commit=False) as session:
@@ -50,7 +51,7 @@ async def create_message(
         )
         session.add(message)
         await session.commit()
-        return PostedDataOutputSchema.model_validate(message)
+        return PostedMessageOutputSchema.model_validate(message)
 
 async def retrieve_messages(
         engine: AsyncEngine,
@@ -84,7 +85,7 @@ async def retrieve_messages(
 async def create_exchange_key(
         engine: AsyncEngine,
         request: PostExchangeKeyRequestModel,
-    ) -> PostedDataOutputSchema:
+    ) -> PostedExchangeKeyOutputSchema:
     sender = await get_or_create_user(engine, request.public_key)
     recipient = await get_or_create_user(engine, request.recipient_public_key)
     async with AsyncSession(engine, expire_on_commit=False) as session:
@@ -97,7 +98,7 @@ async def create_exchange_key(
         )
         session.add(exchange_key)
         await session.commit()
-        return PostedDataOutputSchema.model_validate(exchange_key)
+        return PostedExchangeKeyOutputSchema.model_validate(exchange_key)
 
 async def retrieve_exchange_keys(
         engine: AsyncEngine,

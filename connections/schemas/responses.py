@@ -1,7 +1,8 @@
 from pydantic import BaseModel
 
 from database.schemas.output import (
-    PostedDataOutputSchema,
+    PostedMessageOutputSchema,
+    PostedExchangeKeyOutputSchema,
     StoredExchangeKeyOutputSchema,
     StoredMessageOutputSchema,
 )
@@ -18,8 +19,11 @@ class _RetrieveExchangeKeysResponseDataModel(BaseModel):
     """A list of exchange keys to return on a retrieval request."""
     exchange_keys: list[StoredExchangeKeyOutputSchema]
 
-class PostDataResponseModel(BaseResponseModel):
-    data: PostedDataOutputSchema
+class PostMessageResponseModel(BaseResponseModel):
+    data: PostedMessageOutputSchema
+
+class PostExchangeKeyResponseModel(BaseResponseModel):
+    data: PostedExchangeKeyOutputSchema
 
 class RetrieveExchangeKeysResponseModel(BaseResponseModel):
     data: _RetrieveExchangeKeysResponseDataModel

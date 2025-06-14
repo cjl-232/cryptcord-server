@@ -12,7 +12,8 @@ from connections.schemas.requests import (
     RetrievalRequestModel,
 )
 from connections.schemas.responses import (
-    PostDataResponseModel,
+    PostMessageResponseModel,
+    PostExchangeKeyResponseModel,
     RetrieveExchangeKeysResponseModel,
     RetrieveMessagesResponseModel,
 )
@@ -44,7 +45,7 @@ app = FastAPI(
 @app.post("/messages/post")
 async def post_message(
     request: PostMessageRequestModel,
-) -> PostDataResponseModel:
+) -> PostMessageResponseModel:
     """
     Post an encrypted message to the server.
 
@@ -60,7 +61,7 @@ async def post_message(
     16-byte hexadecimal identifier for the message.
     """
     message_data = await operations.create_message(engine, request)
-    response = PostDataResponseModel.model_validate({
+    response = PostMessageResponseModel.model_validate({
         'status': 'success',
         'message': 'Message successfully posted.',
         'data': {
@@ -101,7 +102,7 @@ async def retrieve_messages(
 @app.post("/exchange-keys/post")
 async def post_exchange_key(
     request: PostExchangeKeyRequestModel,
-) -> PostDataResponseModel:
+) -> PostExchangeKeyResponseModel:
     """
     Post an exchange key to the server.
 
@@ -115,7 +116,7 @@ async def post_exchange_key(
     key was successfully stored on the server.
     """
     exchange_key_data = await operations.create_exchange_key(engine, request)
-    response = PostDataResponseModel.model_validate({
+    response = PostExchangeKeyResponseModel.model_validate({
         'status': 'success',
         'message': 'Exchange key successfully posted.',
         'data': {
