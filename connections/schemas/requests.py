@@ -221,3 +221,6 @@ class PostMessageRequestModel(_BaseRequestModel):
 
 class RetrievalRequestModel(_BaseRequestModel, _RetrievalFilterModel):
     pass
+
+class FetchDataRequestModel(_BaseRequestModel, _RetrievalFilterModel):
+    pass

@@ -3,6 +3,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
 from connections.schemas.requests import (
+    FetchDataRequestModel,
     PostExchangeKeyRequestModel,
     PostMessageRequestModel,
     RetrievalRequestModel,
@@ -55,7 +56,7 @@ async def create_message(
 
 async def retrieve_messages(
         engine: AsyncEngine,
-        request: RetrievalRequestModel,
+        request: FetchDataRequestModel | RetrievalRequestModel,
     ) -> list[StoredMessageOutputSchema]:
     # Retrieve the requesting user.
     user = await get_or_create_user(engine, request.public_key)
@@ -102,7 +103,7 @@ async def create_exchange_key(
 
 async def retrieve_exchange_keys(
         engine: AsyncEngine,
-        request: RetrievalRequestModel,
+        request: FetchDataRequestModel | RetrievalRequestModel,
     ) -> list[StoredExchangeKeyOutputSchema]:
     # Retrieve the requesting user.
     user = await get_or_create_user(engine, request.public_key)

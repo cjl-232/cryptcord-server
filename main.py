@@ -10,12 +10,14 @@ from connections.schemas.requests import (
     PostExchangeKeyRequestModel,
     PostMessageRequestModel,
     RetrievalRequestModel,
+    FetchDataRequestModel,
 )
 from connections.schemas.responses import (
     PostMessageResponseModel,
     PostExchangeKeyResponseModel,
     RetrieveExchangeKeysResponseModel,
     RetrieveMessagesResponseModel,
+    FetchDataResponseModel,
 )
 from database import operations
 from database.models import Base
@@ -41,6 +43,47 @@ app = FastAPI(
     #dependencies=[Depends(verify_user_key)],
     lifespan=lifespan,
 )
+
+@app.post('/data/fetch')
+async def fetch_data(
+    request: FetchDataRequestModel,
+) -> FetchDataResponseModel:
+    """
+    Retrieve exchange keys and encrypted messages stored on the server.
+
+    This request requires the user's public key, and will retrieve all exchange
+    keys and encrypted messages stored on the server that are addressed to
+    them. To limit the size of responses, the user may optionally provide a 
+    'whitelist' of public keys, retrieving only data addressed from one of
+    these, or a minimum datetime at which the data was stored. The response
+    will contain a list of messages and a list of exchange keys, with the
+    following contents:
+
+    * Each item will include the public key the data is addressed from and the
+    timestamp at which it was stored.
+    * Each message will include the encrypted text, a signature, and a unique
+    16-byte identifier in hexadecimal form.
+    * Each exchange key will include the public key of an ephemeral 32-byte
+    key pair, a signature, and, if applicable, the public exchange key it was
+    sent in response to.
+
+    In all cases the client should use the provided signatures to validate
+    the authenticity of the data.
+    """
+    messages = await operations.retrieve_messages(engine, request)
+    exchange_keys = await operations.retrieve_exchange_keys(engine, request)
+    response = FetchDataResponseModel.model_validate({
+        'status': 'success',
+        'message': (
+            f'Fetched {len(messages)} messages and {len(exchange_keys)} '
+            f'exchange keys.'
+        ),
+        'data': {
+            'messages': messages,
+            'exchange_keys': exchange_keys,
+        },
+    })
+    return response
 
 @app.post("/messages/post")
 async def post_message(
