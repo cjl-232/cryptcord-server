@@ -85,7 +85,7 @@ async def fetch_data(
     })
     return response
 
-@app.post("/messages/post")
+@app.post("/data/post/message")
 async def post_message(
     request: PostMessageRequestModel,
 ) -> PostMessageResponseModel:
@@ -142,7 +142,7 @@ async def retrieve_messages(
     })
     return response
 
-@app.post("/exchange-keys/post")
+@app.post("/data/post/exchange-key")
 async def post_exchange_key(
     request: PostExchangeKeyRequestModel,
 ) -> PostExchangeKeyResponseModel:

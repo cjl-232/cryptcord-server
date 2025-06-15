@@ -141,7 +141,6 @@ class PostExchangeKeyRequestModel(_BaseRequestModel):
         Field(
             description=('The Base64-encoding of a 32-byte exchange key.'),
             examples=['nejkSizpsvXcGjQwQCZqiilvlVhkzFWq4qT30o79FtA='],
-            default=None,
         ),
     ]
 

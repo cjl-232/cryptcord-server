@@ -22,7 +22,7 @@ class _RetrieveExchangeKeysResponseDataModel(BaseModel):
 class _FetchDataResponseDataModel(BaseModel):
     """A list of messages to return on a retrieval request."""
     messages: list[StoredMessageOutputSchema]
-    exchange_keys: list[StoredMessageOutputSchema]
+    exchange_keys: list[StoredExchangeKeyOutputSchema]
 
 class FetchDataResponseModel(BaseResponseModel):
     data: _FetchDataResponseDataModel
