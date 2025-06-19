@@ -2,6 +2,8 @@ import os
 
 from contextlib import asynccontextmanager
 
+import sqlalchemy
+
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -13,6 +15,7 @@ from connections.schemas.requests import (
     FetchDataRequestModel,
 )
 from connections.schemas.responses import (
+    BaseResponseModel,
     PostMessageResponseModel,
     PostExchangeKeyResponseModel,
     RetrieveExchangeKeysResponseModel,
@@ -22,13 +25,17 @@ from connections.schemas.responses import (
 from database import operations
 from database.models import Base
 
-# Load environment variables and use them to create the engine object.
 load_dotenv()
-URL = (
-    f'postgresql+asyncpg://'
-    f'{os.environ['DB_USERNAME']}:{os.environ['DB_PASSWORD']}'
-    f'@{os.environ['HOST']}:{os.environ['PORT']}/{os.environ['DB_NAME']}'
+
+URL = sqlalchemy.URL.create(
+    drivername=os.environ['DB_DRIVERNAME'],
+    username=os.environ['DB_USERNAME'],
+    password=os.environ['DB_PASSWORD'],
+    host=os.environ['DB_HOST'],
+    port=int(os.environ['DB_PORT']),
+    database=os.environ['DB_NAME'],
 )
+
 engine = create_async_engine(URL)
 
 @asynccontextmanager
@@ -43,6 +50,11 @@ app = FastAPI(
     #dependencies=[Depends(verify_user_key)],
     lifespan=lifespan,
 )
+
+@app.get('/ping')
+async def ping() -> BaseResponseModel:
+    """Ping the server to test connection."""
+    return BaseResponseModel(status='success', message='pong')
 
 @app.post('/data/fetch')
 async def fetch_data(
@@ -85,7 +97,7 @@ async def fetch_data(
     })
     return response
 
-@app.post("/data/post/message")
+@app.post('/data/post/message', status_code=201)
 async def post_message(
     request: PostMessageRequestModel,
 ) -> PostMessageResponseModel:
@@ -142,7 +154,7 @@ async def retrieve_messages(
     })
     return response
 
-@app.post("/data/post/exchange-key")
+@app.post("/data/post/exchange-key", status_code=201)
 async def post_exchange_key(
     request: PostExchangeKeyRequestModel,
 ) -> PostExchangeKeyResponseModel:
