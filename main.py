@@ -126,34 +126,6 @@ async def post_message(
     })
     return response
 
-@app.post("/messages/retrieve")
-async def retrieve_messages(
-    request: RetrievalRequestModel,
-) -> RetrieveMessagesResponseModel:
-    """
-    Retrieve encrypted messages stored on the server.
-
-    This request requires the user's public key, and will retrieve all messages
-    stored on the server that are addressed to that public key. To limit the
-    size of responses, the user may optionally provide a 'whitelist' of
-    public keys, retrieving only messages from one of these, or a minimum
-    datetime for the message's timestamp, retrieving only messages sent at or
-    after this datetime. The response will contain a list of messages, each
-    with the sender's public key, the encrypted text, a signature that should
-    be used to verify the authenticity of the message, the timestamp at which
-    it was stored on the server, and a unique 16-byte hexadecimal identifier
-    for the message.
-    """
-    messages = await operations.retrieve_messages(engine, request)
-    response = RetrieveMessagesResponseModel.model_validate({
-        'status': 'success',
-        'message': f'{len(messages)} messages retrieved.',
-        'data': {
-            'messages': messages,
-        },
-    })
-    return response
-
 @app.post("/data/post/exchange-key", status_code=201)
 async def post_exchange_key(
     request: PostExchangeKeyRequestModel,
@@ -176,34 +148,6 @@ async def post_exchange_key(
         'message': 'Exchange key successfully posted.',
         'data': {
             'timestamp': exchange_key_data.timestamp,
-        },
-    })
-    return response
-
-@app.post("/exchange-keys/retrieve")
-async def retrieve_exchange_keys(
-    request: RetrievalRequestModel,
-) -> RetrieveExchangeKeysResponseModel:
-    """
-    Retrieve ephemeral keys stored on the server.
-
-    This request requires the user's public key, and will retrieve all
-    ephemeral keys stored on the server that are addressed to that public key.
-    To limit the size of responses, the user may optionally provide a
-    'whitelist' of public keys, retrieving only ephemeral keys from one of
-    these, or a minimum datetime for the ephemeral key's timestamp, retrieving
-    only keys sent at or after this datetime. The response will contain a list
-    of ephemeral keys, each with the sender's public key, the ephemeral key
-    itself, a signature that **must** be used to verify the authenticity of
-    the key, message, the timestamp at which it was stored on the server, and
-    a unique 16-byte hexadecimal identifier for the ephemeral key.
-    """
-    exchange_keys = await operations.retrieve_exchange_keys(engine, request)
-    response = RetrieveExchangeKeysResponseModel.model_validate({
-        'status': 'success',
-        'message': f'{len(exchange_keys)} keys retrieved.',
-        'data': {
-            'exchange_keys': exchange_keys,
         },
     })
     return response
