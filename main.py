@@ -11,15 +11,12 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from connections.schemas.requests import (
     PostExchangeKeyRequestModel,
     PostMessageRequestModel,
-    RetrievalRequestModel,
     FetchDataRequestModel,
 )
 from connections.schemas.responses import (
     BaseResponseModel,
     PostMessageResponseModel,
     PostExchangeKeyResponseModel,
-    RetrieveExchangeKeysResponseModel,
-    RetrieveMessagesResponseModel,
     FetchDataResponseModel,
 )
 from database import operations
